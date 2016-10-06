@@ -19,6 +19,11 @@ import banksys.persistence.exception.AccountNotFoundException;
 import banksys.persistence.exception.FlushException;
 
 public class BankControllerTest {
+	
+	private IAccountRepository repository;
+	private BankController controller;
+	private boolean didCreateAccount;
+	private boolean didRemoveAccount;
 
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
@@ -30,10 +35,18 @@ public class BankControllerTest {
 
 	@Before
 	public void setUp() throws Exception {
-		IAccountRepository repository = new IAccountRepository() {
+		repository = newRepositoryMock();
+		controller = new BankController(repository);
+		didCreateAccount = false;
+		didRemoveAccount = false;
+	}
+	
+	private IAccountRepository newRepositoryMock() {
+		return new IAccountRepository() {
 			
 			@Override
-			public AbstractAccount retrieve(String number) throws AccountNotFoundException {
+			public AbstractAccount retrieve(String number)
+					throws AccountNotFoundException {
 				// TODO Auto-generated method stub
 				return null;
 			}
@@ -53,19 +66,16 @@ public class BankControllerTest {
 			@Override
 			public void flush() throws FlushException {
 				// TODO Auto-generated method stub
-				
 			}
 			
 			@Override
 			public void delete(String number) throws AccountDeletionException {
-				// TODO Auto-generated method stub
-				
+				didRemoveAccount = true;
 			}
 			
 			@Override
 			public void create(AbstractAccount account) throws AccountCreationException {
-				// TODO Auto-generated method stub
-				
+				didCreateAccount = true;
 			}
 		};
 	}
@@ -76,9 +86,6 @@ public class BankControllerTest {
 
 	@Test
 	public void testAddAccount() {
-		IAccountRepository repository = new AccountVector();
-		BankController controller = new BankController(repository);
-		
 		AbstractAccount account = new OrdinaryAccount("1234");
 		try {
 			controller.addAccount(account);
@@ -86,14 +93,11 @@ public class BankControllerTest {
 			fail(e.getMessage());
 		}
 		
-		assertTrue("Number of accounts should be 1, is " + repository.mumberOfAccounts(), repository.mumberOfAccounts() == 1);
+		assertTrue("Account wasn't created in the repository", didCreateAccount);
 	}
 	
 	@Test
 	public void testRemoveAccount() {
-		IAccountRepository repository = new AccountVector();
-		BankController controller = new BankController(repository);
-		
 		AbstractAccount account = new OrdinaryAccount("1234");
 		try {
 			controller.addAccount(account);
@@ -107,7 +111,7 @@ public class BankControllerTest {
 			fail(e.getMessage());
 		}
 		
-		assertTrue("Number of accounts should be 0, is " + repository.mumberOfAccounts(), repository.mumberOfAccounts() == 0);
+		assertTrue("Account wasn't removed of the repository", didRemoveAccount);
 	}
 
 }
