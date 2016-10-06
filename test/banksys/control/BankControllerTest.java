@@ -10,8 +10,9 @@ import org.junit.Test;
 
 import banksys.account.AbstractAccount;
 import banksys.account.OrdinaryAccount;
+import banksys.account.exception.InsufficientFundsException;
+import banksys.account.exception.NegativeAmountException;
 import banksys.control.exception.BankTransactionException;
-import banksys.persistence.AccountVector;
 import banksys.persistence.IAccountRepository;
 import banksys.persistence.exception.AccountCreationException;
 import banksys.persistence.exception.AccountDeletionException;
@@ -21,6 +22,7 @@ import banksys.persistence.exception.FlushException;
 public class BankControllerTest {
 	
 	private IAccountRepository repository;
+	private AbstractAccount account;
 	private BankController controller;
 	private boolean didCreateAccount;
 	private boolean didRemoveAccount;
@@ -36,7 +38,10 @@ public class BankControllerTest {
 	@Before
 	public void setUp() throws Exception {
 		repository = newRepositoryMock();
+		account = newAccountMock();
+		account.credit(50);
 		controller = new BankController(repository);
+		
 		didCreateAccount = false;
 		didRemoveAccount = false;
 	}
@@ -45,10 +50,8 @@ public class BankControllerTest {
 		return new IAccountRepository() {
 			
 			@Override
-			public AbstractAccount retrieve(String number)
-					throws AccountNotFoundException {
-				// TODO Auto-generated method stub
-				return null;
+			public AbstractAccount retrieve(String number) throws AccountNotFoundException {
+				return account;
 			}
 			
 			@Override
@@ -79,6 +82,23 @@ public class BankControllerTest {
 			}
 		};
 	}
+	
+	private AbstractAccount newAccountMock() {
+		return new AbstractAccount("1234") {
+			
+			@Override
+			public void debit(double amount) throws NegativeAmountException, InsufficientFundsException {
+				if (amount < 0) {
+					throw new NegativeAmountException(amount);
+				}
+				if (amount <= balance) {
+					balance -= amount;
+				} else {
+					throw new InsufficientFundsException(number, amount);
+				}
+			}
+		};
+	}
 
 	@After
 	public void tearDown() throws Exception {
@@ -86,7 +106,6 @@ public class BankControllerTest {
 
 	@Test
 	public void testAddAccount() {
-		AbstractAccount account = new OrdinaryAccount("1234");
 		try {
 			controller.addAccount(account);
 		} catch (BankTransactionException e) {
@@ -98,7 +117,6 @@ public class BankControllerTest {
 	
 	@Test
 	public void testRemoveAccount() {
-		AbstractAccount account = new OrdinaryAccount("1234");
 		try {
 			controller.addAccount(account);
 		} catch (BankTransactionException e) {
@@ -106,12 +124,34 @@ public class BankControllerTest {
 		}
 		
 		try {
-			controller.removeAccount("1234");
+			controller.removeAccount(account.getNumber());
 		} catch (BankTransactionException e) {
 			fail(e.getMessage());
 		}
 		
 		assertTrue("Account wasn't removed of the repository", didRemoveAccount);
+	}
+	
+	@Test
+	public void testDoCredit() {
+		try {
+			controller.doCredit(account.getNumber(), 30);
+		} catch (BankTransactionException e) {
+			fail(e.getMessage());
+		}
+		
+		assertTrue("Account balance should be 80, is " + account.getBalance(), account.getBalance() == 80);
+	}
+	
+	@Test
+	public void testDoDebit() {
+		try {
+			controller.doDebit(account.getNumber(), 30);
+		} catch (BankTransactionException e) {
+			fail(e.getMessage());
+		}
+		
+		assertTrue("Account balance should be 20, is " + account.getBalance(), account.getBalance() == 20);
 	}
 
 }
