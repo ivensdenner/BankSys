@@ -92,7 +92,7 @@ public class BankController {
 
 		AbstractAccount toAccount;
 		try {
-			toAccount = this.repository.retrieve(fromNumber);
+			toAccount = this.repository.retrieve(toNumber);
 		} catch (AccountNotFoundException anfe) {
 			throw new BankTransactionException(anfe);
 		}
