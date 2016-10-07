@@ -11,6 +11,7 @@ import banksys.account.exception.NegativeAmountException;
 
 public class AbstractAccountTest {
 	
+	private static final String ACCOUNT_NUMBER = "1234";
 	private AbstractAccount account;
 
 	@Before
@@ -20,7 +21,7 @@ public class AbstractAccountTest {
 	}
 	
 	private AbstractAccount accountMock() {
-		return new AbstractAccount("1234") {
+		return new AbstractAccount(ACCOUNT_NUMBER) {
 			@Override
 			public void debit(double amount) throws NegativeAmountException, InsufficientFundsException {
 			}
