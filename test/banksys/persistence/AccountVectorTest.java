@@ -1,6 +1,7 @@
 package banksys.persistence;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -14,20 +15,25 @@ import banksys.persistence.exception.AccountNotFoundException;
 
 public class AccountVectorTest {
 	
+	private static final String ACCOUNT_NUMBER_A = "1234";
+	private static final String ACCOUNT_NUMBER_B = "5678";
 	private AccountVector repository;
-	private AbstractAccount account;
+	private AbstractAccount accountA;
+	private AbstractAccount accountB;
 
 	@Before
 	public void setUp() throws Exception {
 		repository = new AccountVector();
-		account = accountMock();
+		accountA = accountMock(true);
+		repository.create(accountA);
+		accountB = accountMock(false);
 	}
 	
-	private AbstractAccount accountMock() {
-		return new AbstractAccount("1234") {
+	private AbstractAccount accountMock(boolean isA) {
+		String accountNumber = isA ? ACCOUNT_NUMBER_A : ACCOUNT_NUMBER_B;
+		return new AbstractAccount(accountNumber) {
 			@Override
 			public void debit(double amount) throws NegativeAmountException, InsufficientFundsException {
-				// TODO Auto-generated method stub
 			}
 		};
 	}
@@ -35,13 +41,7 @@ public class AccountVectorTest {
 	@Test
 	public void testDelete() {
 		try {
-			repository.create(account);
-		} catch (AccountCreationException e) {
-			fail(e.getMessage());
-		}
-		
-		try {
-			repository.delete(account.getNumber());
+			repository.delete(ACCOUNT_NUMBER_A);
 		} catch (AccountDeletionException e) {
 			fail(e.getMessage());
 		}
@@ -50,43 +50,63 @@ public class AccountVectorTest {
 	}
 	
 	@Test
+	public void testDeleteAccountDeletionException() {
+		try {
+			repository.delete("0000");
+		} catch (AccountDeletionException e) {
+			return;
+		}
+		
+		fail("Should throw AccountDeletionException");
+	}
+	
+	@Test
 	public void testCreate() {
 		try {
-			repository.create(account);
+			repository.create(accountB);
 		} catch (AccountCreationException e) {
 			fail(e.getMessage());
 		}
 		
-		assertTrue("Number of accounts should be 1", repository.mumberOfAccounts() == 1);
+		assertTrue("Number of accounts should be 2", repository.mumberOfAccounts() == 2);
+	}
+	
+	@Test
+	public void testCreateAccountCreationException() {
+		try {
+			repository.create(accountA);
+		} catch (AccountCreationException e) {
+			return;
+		}
+		
+		fail("Should throw AccountCreationException");
 	}
 	
 	@Test
 	public void testRetrieve() {
-		try {
-			repository.create(account);
-		} catch (AccountCreationException e) {
-			fail(e.getMessage());
-		}
-		
 		AbstractAccount retrievedAccount = null;
-		
 		try {
-			retrievedAccount = repository.retrieve(account.getNumber());
+			retrievedAccount = repository.retrieve(ACCOUNT_NUMBER_A);
 		} catch (AccountNotFoundException e) {
 			fail(e.getMessage());
 		}
 
-		assertSame("Returned a wrong account", account, retrievedAccount);
+		assertTrue("Returned wrong account", ACCOUNT_NUMBER_A == retrievedAccount.getNumber());
+	}
+	
+	@Test
+	public void testRetrieveAccountNotFoundException() {
+		try {
+			repository.retrieve("0000");
+		} catch (AccountNotFoundException e) {
+			return;
+		}
+
+		fail("Should throw AccountNotFoundException");
 	}
 	
 	@Test
 	public void testNumberOfAccounts() {
-		try {
-			repository.create(account);
-		} catch (AccountCreationException e) {
-			fail(e.getMessage());
-		}
-
 		assertTrue("Number of accounts should be 1", repository.mumberOfAccounts() == 1);
 	}
 
