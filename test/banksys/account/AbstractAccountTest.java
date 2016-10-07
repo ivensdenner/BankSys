@@ -1,11 +1,9 @@
 package banksys.account;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import banksys.account.exception.InsufficientFundsException;
@@ -15,37 +13,40 @@ public class AbstractAccountTest {
 	
 	private AbstractAccount account;
 
-	@BeforeClass
-	public static void setUpBeforeClass() throws Exception {
-	}
-
-	@AfterClass
-	public static void tearDownAfterClass() throws Exception {
-	}
-
 	@Before
 	public void setUp() throws Exception {
-		account = new AbstractAccount("1234") {
+		account = accountMock();
+		account.credit(50);
+	}
+	
+	private AbstractAccount accountMock() {
+		return new AbstractAccount("1234") {
 			@Override
 			public void debit(double amount) throws NegativeAmountException, InsufficientFundsException {
-				System.out.println("debit amount: " + amount);
 			}
 		};
-	}
-
-	@After
-	public void tearDown() throws Exception {
 	}
 
 	@Test
 	public void testCredit() {
 		try {
-			account.credit(50);
+			account.credit(30);
 		} catch (NegativeAmountException e) {
 			fail(e.getMessage());
 		}
 		
-		assertTrue("Balance should be 50, is " + account.getBalance(), account.getBalance() == 50);
+		assertTrue("Balance should be 80", account.getBalance() == 80);
+	}
+	
+	@Test
+	public void testCreditNegativeAmount() {
+		try {
+			account.credit(-30);
+		} catch (NegativeAmountException e) {
+			return;
+		}
+		
+		fail("Should throw an exception");
 	}
 
 }
